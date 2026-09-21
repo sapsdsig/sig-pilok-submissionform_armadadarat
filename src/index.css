@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    min-width: 320px;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background: #f1f5f9;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .field-label {
+    @apply mb-2 block text-sm font-semibold text-slate-800;
+  }
+
+  .form-input {
+    @apply h-11 w-full min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-sig-red focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500;
+  }
+
+  .input-error {
+    @apply border-red-600 focus:border-red-600 focus:ring-red-100;
+  }
+
+  .readonly-field {
+    @apply min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3;
+  }
+
+  .button-primary {
+    @apply inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-sig-red px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sig-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sig-red focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto;
+  }
+
+  .button-secondary {
+    @apply inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 sm:w-auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

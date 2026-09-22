@@ -49,21 +49,24 @@ npm install
 copy .env.example .env
 ```
 
-Frontend-only development:
+### Full-stack development
 
 ```bash
+npm install
 npm run dev
 ```
 
-Vite berjalan pada `http://localhost:5173`. Port dibuat strict agar Vite tidak diam-diam berpindah ke port lain yang mudah tertukar dengan aplikasi berbeda. Workflow ini hanya menjalankan UI; route `/api/*` dan operasi Google tidak tersedia. Form tetap dirender dan menampilkan status API tidak tersedia beserta tombol Retry.
+Open [http://localhost:5173](http://localhost:5173). Ini adalah workflow lokal normal karena frontend membutuhkan Vercel Functions `/api/*` pada origin yang sama. Credential Google tetap berada di environment server lokal (`.env` atau `.env.local`) dan tidak pernah diekspos melalui variabel `VITE_*`.
 
-Full-stack development:
+Script `npm run dev` memakai launcher lokal untuk memulai Vercel CLI, sedangkan Vercel runtime secara eksplisit menjalankan `npm run dev:vite` sebagai frontend child process. Pemisahan ini menghindari recursive-invocation guard Vercel. Port `5173` bersifat strict: startup gagal bila port sedang dipakai dan tidak diam-diam berpindah ke port lain.
+
+### Frontend-only development
 
 ```bash
-npm run dev:full
+npm run dev:vite
 ```
 
-Vercel runtime berjalan pada `http://localhost:3000` dan menjalankan frontend bersama TypeScript Functions di `api/`. Workflow ini memerlukan konfigurasi Google server-side di `.env`. Script `dev:full` tidak memanggil dirinya sendiri: Vercel menjalankan Vite sebagai frontend child process, sedangkan `npm run dev` tetap merupakan command frontend-only.
+Open [http://localhost:5173](http://localhost:5173). Mode ini hanya untuk UI/debugging. Vercel Functions dan route Google API tidak tersedia, sehingga master load dapat gagal secara expected. Form tetap dirender dan menampilkan status API tidak tersedia beserta tombol Retry.
 
 ## API
 
@@ -74,6 +77,22 @@ Vercel runtime berjalan pada `http://localhost:3000` dan menjalankan frontend be
 - `PUT /api/submissions/:kodePilokArmada` — memperbarui row existing secara terarah; tidak melakukan append pengganti.
 
 Method yang tidak didukung menghasilkan `405`. Error API menggunakan bentuk `{ "error": { "code": "...", "message": "..." } }` tanpa stack trace atau credential.
+
+## Legacy Submission Migration
+
+Audit migrasi secara read-only terlebih dahulu:
+
+```bash
+npm run migrate:legacy -- --dry-run
+```
+
+Setelah statistik diperiksa, jalankan migrasi non-destruktif dengan:
+
+```bash
+npm run migrate:legacy -- --apply
+```
+
+Mode apply membuat backup tab terverifikasi sebelum menambahkan header wajib yang hilang dan mengisi hanya timestamp legacy yang masih kosong. Nilai existing dan kolom tambahan dipertahankan; menjalankan ulang script pada data yang sudah lengkap tidak menulis perubahan baru.
 
 ## Struktur Google Sheets
 

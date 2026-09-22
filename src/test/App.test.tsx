@@ -2,33 +2,57 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import App from "../App";
+import { MASTER_PILOK_URL } from "../components/PilokEntryGate";
 import { defaultApiHandler } from "./setup";
 
-async function selectCode(code: string) {
+async function waitForGateReady() {
+  await waitFor(() => expect(screen.getByRole("button", { name: "Lanjutkan" })).toBeEnabled());
+}
+
+async function continueWithCode(code: string) {
   const user = userEvent.setup();
-  const combobox = screen.getByRole("combobox", { name: /Kode Pilok Armada/i });
-  await user.click(combobox);
-  await user.clear(combobox);
-  await user.type(combobox, code);
-  await user.click(await screen.findByRole("option", { name: new RegExp(code) }));
+  await waitForGateReady();
+  const input = screen.getByRole("textbox", { name: /Kode PILOK/i });
+  await user.clear(input);
+  await user.type(input, code);
+  await user.click(screen.getByRole("button", { name: "Lanjutkan" }));
   return user;
 }
 
 describe("PILOK Armada Darat", () => {
-  it("menampilkan loading master selama request startup belum selesai", async () => {
+  it("initial page hanya menampilkan gate Kode PILOK", async () => {
+    render(<App />);
+    expect(screen.getByRole("heading", { name: "PILOK - Armada Darat" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Masukkan Kode PILOK" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Data Armada Darat" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Ringkasan Armada" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Simpan Data|Simpan Perubahan/ })).not.toBeInTheDocument();
+    await waitForGateReady();
+  });
+
+  it("link master memakai URL aman dan membuka tab baru", () => {
+    render(<App />);
+    const link = screen.getByRole("link", { name: "Lihat Master PILOK di tab baru" });
+    expect(link).toHaveAttribute("href", MASTER_PILOK_URL);
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
+  it("menampilkan loading master dengan gate tetap terlihat dan Lanjutkan disabled", async () => {
     let resolveMaster: ((response: Response) => void) | undefined;
     vi.mocked(fetch).mockImplementationOnce(() => new Promise<Response>((resolve) => {
       resolveMaster = resolve;
     }));
     render(<App />);
-    expect(screen.getByRole("heading", { name: "PILOK - Armada Darat" })).toBeInTheDocument();
-    expect(screen.getByText("Memuat master data…")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Masukkan Kode PILOK" })).toBeInTheDocument();
+    expect(screen.getByText("Memuat data master...")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lanjutkan" })).toBeDisabled();
     resolveMaster?.(new Response(JSON.stringify({ data: [] }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     }));
     expect(await screen.findByText("Master data kosong")).toBeInTheDocument();
-    expect(screen.queryByText("Memuat master data…")).not.toBeInTheDocument();
+    expect(screen.queryByText("Memuat data master...")).not.toBeInTheDocument();
   });
 
   it("HTML dari /api/master tidak membuat blank screen dan Retry memulihkan master", async () => {
@@ -39,61 +63,77 @@ describe("PILOK Armada Darat", () => {
     }));
     const user = userEvent.setup();
     render(<App />);
-    expect(screen.getByRole("heading", { name: "PILOK - Armada Darat" })).toBeInTheDocument();
     expect(await screen.findByText("Master data tidak tersedia")).toBeInTheDocument();
-    expect(screen.queryByText("Memuat master data…")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Lihat Master PILOK di tab baru" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Lanjutkan" })).toBeDisabled();
     await user.click(screen.getByRole("button", { name: "Coba Lagi" }));
-    await waitFor(() => expect(screen.getByRole("combobox")).toBeEnabled());
-    await user.click(screen.getByRole("combobox"));
-    expect(await screen.findByRole("option", { name: /20001/ })).toBeInTheDocument();
+    await waitForGateReady();
+    expect(screen.getByRole("textbox", { name: /Kode PILOK/i })).toBeEnabled();
     consoleError.mockRestore();
   });
 
-  it("fetch rejection menyelesaikan loading dan menampilkan error state", async () => {
+  it("fetch rejection menyelesaikan loading dan menampilkan Retry", async () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
     vi.mocked(fetch).mockRejectedValueOnce(new TypeError("Failed to fetch"));
     render(<App />);
     expect(await screen.findByText("Master data tidak tersedia")).toBeInTheDocument();
-    expect(screen.queryByText("Memuat master data…")).not.toBeInTheDocument();
+    expect(screen.queryByText("Memuat data master...")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Coba Lagi" })).toBeInTheDocument();
     consoleError.mockRestore();
   });
 
-  it("tidak menampilkan error wajib sebelum interaksi atau submit", () => {
-    render(<App />);
-    expect(screen.queryByText("Kode Pilok Armada wajib dipilih.")).not.toBeInTheDocument();
-  });
-
-  it("searchable select memfilter berdasarkan distributor dan district", async () => {
+  it("kode kosong menampilkan validasi dan memfokuskan input", async () => {
     const user = userEvent.setup();
     render(<App />);
-    const combobox = screen.getByRole("combobox", { name: /Kode Pilok Armada/i });
-    await user.click(combobox);
-    await user.type(combobox, "aceh barat");
-    expect(await screen.findByRole("option", { name: /20006/i })).toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: /20001/i })).not.toBeInTheDocument();
+    await waitForGateReady();
+    await user.click(screen.getByRole("button", { name: "Lanjutkan" }));
+    const input = screen.getByRole("textbox", { name: /Kode PILOK/i });
+    expect(await screen.findByText("Kode PILOK wajib diisi.")).toBeInTheDocument();
+    await waitFor(() => expect(input).toHaveFocus());
+    expect(input).toHaveAttribute("aria-describedby", "pilok-code-error");
   });
 
-  it("memilih kode menyelesaikan Distributor Group dan District Name", async () => {
+  it("Enter pada input menjalankan validasi kode", async () => {
+    const user = userEvent.setup();
     render(<App />);
-    await selectCode("20001");
+    await waitForGateReady();
+    const input = screen.getByRole("textbox", { name: /Kode PILOK/i });
+    await user.type(input, "99999{enter}");
+    expect(await screen.findByText("Periksa kembali kode atau lihat daftar Master PILOK.")).toBeInTheDocument();
+  });
+
+  it("kode invalid tidak membuka form utama", async () => {
+    render(<App />);
+    await continueWithCode("99999");
+    expect(await screen.findByText("Periksa kembali kode atau lihat daftar Master PILOK.")).toBeInTheDocument();
+    expect(screen.getByText("Kode PILOK tidak ditemukan.")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Data Armada Darat" })).not.toBeInTheDocument();
+  });
+
+  it("kode valid menampilkan identity read-only dan form utama", async () => {
+    render(<App />);
+    await continueWithCode("20001");
     expect(await screen.findByText("Edit Data")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Informasi PILOK" })).toBeInTheDocument();
     expect(screen.getByText("ABADI PUTERA WIRAJAYA, PT")).toBeInTheDocument();
     expect(screen.getByText("MADIUN")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Data Armada Darat" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Ringkasan Armada" })).toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
   });
 
   it("kode baru masuk mode Submission Baru dan seluruh input bernilai nol", async () => {
     render(<App />);
-    await selectCode("20002");
+    await continueWithCode("20002");
     expect(await screen.findByText("Submission Baru")).toBeInTheDocument();
     const quantities = screen.getAllByRole("spinbutton");
     expect(quantities).toHaveLength(16);
     quantities.forEach((input) => expect(input).toHaveValue(0));
   });
 
-  it("20001 memuat nilai existing dan total 9, 0, 9", async () => {
+  it("kode existing memuat nilai dan total 9, 0, 9", async () => {
     render(<App />);
-    await selectCode("20001");
+    await continueWithCode("20001");
     await screen.findByText("Edit Data");
     expect(screen.getByLabelText("Milik 8 Ton")).toHaveValue(6);
     expect(screen.getByLabelText("Milik 32 Ton")).toHaveValue(3);
@@ -105,7 +145,7 @@ describe("PILOK Armada Darat", () => {
   it("total berubah reaktif dan ditampilkan sebagai output non-editable", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await selectCode("20002");
+    await continueWithCode("20002");
     const owned = screen.getByLabelText("Milik 2 Ton");
     const rented = screen.getByLabelText("Sewa 4 Ton");
     await user.clear(owned);
@@ -119,19 +159,48 @@ describe("PILOK Armada Darat", () => {
     expect(total.tagName).toBe("OUTPUT");
   });
 
-  it("menampilkan dan memfokuskan error Kode Pilok pada submit invalid", async () => {
+  it("Ganti Kode PILOK kembali ke gate dan membersihkan identity", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole("button", { name: "Simpan Data" }));
-    const combobox = screen.getByRole("combobox", { name: /Kode Pilok Armada/i });
-    expect(await screen.findByText("Kode Pilok Armada wajib dipilih.")).toBeInTheDocument();
-    await waitFor(() => expect(combobox).toHaveFocus());
+    await continueWithCode("20002");
+    await screen.findByText("Submission Baru");
+    await user.click(screen.getByRole("button", { name: "Ganti Kode PILOK" }));
+    expect(screen.getByRole("heading", { name: "Masukkan Kode PILOK" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /Kode PILOK/i })).toHaveValue("");
+    expect(screen.queryByText("MAGETAN")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Data Armada Darat" })).not.toBeInTheDocument();
+  });
+
+  it("Ganti Kode PILOK meminta konfirmasi bila form sudah berubah", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await continueWithCode("20002");
+    const input = screen.getByLabelText("Milik 2 Ton");
+    await user.clear(input);
+    await user.type(input, "7");
+    await user.click(screen.getByRole("button", { name: "Ganti Kode PILOK" }));
+    const dialog = screen.getByRole("dialog", { name: "Ganti Kode PILOK?" });
+    await user.click(within(dialog).getByRole("button", { name: "Tetap di Form" }));
+    expect(input).toHaveValue(7);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("konfirmasi buang perubahan mereset form ke gate", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await continueWithCode("20002");
+    const input = screen.getByLabelText("Milik 2 Ton");
+    await user.clear(input);
+    await user.type(input, "7");
+    await user.click(screen.getByRole("button", { name: "Ganti Kode PILOK" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Ganti Kode" }));
+    expect(screen.getByRole("heading", { name: "Masukkan Kode PILOK" })).toBeInTheDocument();
   });
 
   it("submit valid membuka dialog dan cancel mempertahankan nilai", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await selectCode("20002");
+    await continueWithCode("20002");
     const input = screen.getByLabelText("Milik 2 Ton");
     await user.clear(input);
     await user.type(input, "7");
@@ -146,7 +215,7 @@ describe("PILOK Armada Darat", () => {
   it("konfirmasi submission baru menampilkan success state yang tepat", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await selectCode("20002");
+    await continueWithCode("20002");
     await user.click(screen.getByRole("button", { name: "Simpan Data" }));
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByRole("button", { name: "Simpan" }));
@@ -156,38 +225,16 @@ describe("PILOK Armada Darat", () => {
   it("konfirmasi edit menampilkan success state perubahan", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await selectCode("20001");
+    await continueWithCode("20001");
     await user.click(await screen.findByRole("button", { name: "Simpan Perubahan" }));
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByRole("button", { name: "Simpan" }));
     expect(await screen.findByText("Perubahan data Armada berhasil disimpan.")).toBeInTheDocument();
   });
 
-  it("pergantian kode tidak membocorkan nilai Armada", async () => {
-    const user = userEvent.setup();
-    render(<App />);
-    await selectCode("20002");
-    const input = screen.getByLabelText("Milik 2 Ton");
-    await user.clear(input);
-    await user.type(input, "7");
-
-    await user.click(screen.getByRole("button", { name: "Hapus pilihan Kode Pilok Armada" }));
-    const combobox = screen.getByRole("combobox", { name: /Kode Pilok Armada/i });
-    await user.type(combobox, "20003");
-    await user.click(await screen.findByRole("option", { name: /20003/ }));
-    await screen.findByText("Submission Baru");
-    expect(screen.getByLabelText("Milik 2 Ton")).toHaveValue(0);
-
-    await user.click(screen.getByRole("button", { name: "Hapus pilihan Kode Pilok Armada" }));
-    await user.type(screen.getByRole("combobox"), "20001");
-    await user.click(await screen.findByRole("option", { name: /20001/ }));
-    await screen.findByText("Edit Data");
-    expect(screen.getByLabelText("Milik 8 Ton")).toHaveValue(6);
-  });
-
   it("menolak negatif dan desimal dengan pesan aksesibel", async () => {
     render(<App />);
-    await selectCode("20002");
+    await continueWithCode("20002");
     const negative = screen.getByLabelText("Milik 2 Ton");
     fireEvent.change(negative, { target: { value: "-1" } });
     expect(await screen.findByText("Jumlah armada tidak boleh negatif.")).toBeInTheDocument();
@@ -197,17 +244,25 @@ describe("PILOK Armada Darat", () => {
     expect(negative).toHaveAttribute("aria-invalid", "true");
   });
 
-  it("response kode lama tidak dapat menimpa pilihan kode yang lebih baru", async () => {
+  it("response kode lama tidak dapat menimpa kode baru", async () => {
     let resolveOldRequest: ((response: Response) => void) | undefined;
     const oldRequest = new Promise<Response>((resolve) => { resolveOldRequest = resolve; });
     vi.mocked(fetch).mockImplementation((input, init) => {
       if (String(input).endsWith("/api/submissions/20002")) return oldRequest;
       return defaultApiHandler(input, init);
     });
+    const user = userEvent.setup();
     render(<App />);
-    await selectCode("20002");
-    await selectCode("20003");
+    await waitForGateReady();
+    const input = screen.getByRole("textbox", { name: /Kode PILOK/i });
+    await user.type(input, "20002");
+    await user.click(screen.getByRole("button", { name: "Lanjutkan" }));
+    expect(screen.getByRole("button", { name: "Memuat data..." })).toBeDisabled();
+    await user.clear(input);
+    await user.type(input, "20003");
+    await user.click(screen.getByRole("button", { name: "Lanjutkan" }));
     expect(await screen.findByText("Submission Baru")).toBeInTheDocument();
+
     resolveOldRequest?.(new Response(JSON.stringify({
       exists: true,
       data: {
@@ -225,13 +280,14 @@ describe("PILOK Armada Darat", () => {
     }), { status: 200, headers: { "Content-Type": "application/json" } }));
     await waitFor(() => expect(screen.getByText("NGAWI")).toBeInTheDocument());
     expect(screen.getByLabelText("Milik 2 Ton")).toHaveValue(0);
+    expect(screen.queryByText("OLD")).not.toBeInTheDocument();
   });
 
   it("save gagal mempertahankan seluruh nilai form", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const user = userEvent.setup();
     render(<App />);
-    await selectCode("20002");
-    await screen.findByText("Submission Baru");
+    await continueWithCode("20002");
     const input = screen.getByLabelText("Milik 2 Ton");
     await user.clear(input);
     await user.type(input, "7");
@@ -244,5 +300,6 @@ describe("PILOK Armada Darat", () => {
     expect(await screen.findByText(/Data gagal disimpan/)).toBeInTheDocument();
     expect(screen.getByLabelText("Milik 2 Ton")).toHaveValue(7);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    consoleError.mockRestore();
   });
 });

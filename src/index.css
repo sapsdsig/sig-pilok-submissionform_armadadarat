@@ -48,6 +48,10 @@
     @apply inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-sig-red px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-sig-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sig-red focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto;
   }
 
+  .button-dark {
+    @apply inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto;
+  }
+
   .button-secondary {
     @apply inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 sm:w-auto;
   }

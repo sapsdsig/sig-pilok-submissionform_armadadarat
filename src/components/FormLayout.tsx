@@ -3,28 +3,26 @@ import type { PropsWithChildren, ReactNode } from "react";
 export function FormShell({ children }: PropsWithChildren) {
   return (
     <div className="min-h-screen bg-slate-100 text-ink">
-      <main className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
-        {children}
-      </main>
+      {children}
     </div>
   );
 }
 
 export function BrandHeader() {
   return (
-    <header className="mb-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-card">
-      <div className="h-1.5 bg-sig-red" aria-hidden="true" />
-      <div className="flex min-w-0 flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
-        <div className="flex min-w-0 items-center gap-5">
-          <img className="h-9 w-auto sm:h-11" src="/branding/sig-logo-red.svg" alt="SIG" />
+    <header className="border-b border-slate-200 bg-white">
+      <div className="mx-auto flex w-full max-w-5xl min-w-0 flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:gap-7 sm:px-6 sm:py-6 lg:px-8">
+        <div className="flex shrink-0 items-center gap-4 sm:gap-5">
+          <img className="h-8 w-auto sm:h-9" src="/branding/sig-logo-red.svg" alt="SIG" />
           <div className="h-9 w-px bg-slate-200" aria-hidden="true" />
-          <img className="h-8 w-auto sm:h-9" src="/branding/pilok-logo-red.svg" alt="PILOK" />
+          <img className="h-7 w-auto sm:h-8" src="/branding/pilok-logo-red.svg" alt="PILOK" />
         </div>
-        <div className="min-w-0 sm:text-right">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        <div className="min-w-0 sm:border-l sm:border-slate-200 sm:pl-7">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-sig-dark">Form Operasional</p>
+          <h1 className="mt-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
             PILOK - Armada Darat
           </h1>
-          <p className="mt-1 text-sm text-slate-600">Pendataan Armada Darat PILOK</p>
+          <p className="mt-0.5 text-sm text-slate-600">Pendataan Armada Darat PILOK</p>
         </div>
       </div>
     </header>
@@ -47,18 +45,22 @@ interface SectionHeaderProps {
   step: number;
   title: string;
   description?: string;
+  action?: ReactNode;
 }
 
-export function SectionHeader({ step, title, description }: SectionHeaderProps) {
+export function SectionHeader({ step, title, description, action }: SectionHeaderProps) {
   return (
-    <div className="mb-5 flex min-w-0 items-start gap-3">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-50 text-sm font-bold text-sig-dark">
-        {step}
-      </span>
-      <div className="min-w-0">
-        <h2 className="text-lg font-semibold text-slate-900 sm:text-xl">{title}</h2>
-        {description ? <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p> : null}
+    <div className="mb-5 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex min-w-0 items-start gap-3">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-50 text-sm font-bold text-sig-dark">
+          {step}
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold text-slate-900 sm:text-xl">{title}</h2>
+          {description ? <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p> : null}
+        </div>
       </div>
+      {action ? <div className="shrink-0 pl-10 sm:pl-0">{action}</div> : null}
     </div>
   );
 }

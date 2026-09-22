@@ -4,13 +4,14 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:full": "vercel dev --yes --listen 3000",
+    "dev": "node scripts/dev.mjs",
+    "dev:vite": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -b --pretty false",
+    "migrate:legacy": "tsx scripts/migrate-legacy-submissions.ts",
     "verify:google": "tsx scripts/verify-google.ts"
   },
   "dependencies": {

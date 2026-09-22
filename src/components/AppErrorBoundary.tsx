@@ -26,18 +26,20 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
     return (
       <FormShell>
         <BrandHeader />
-        <SectionCard>
-          <StatusBanner variant="error" title="Aplikasi tidak dapat ditampilkan">
-            <p>Terjadi gangguan tak terduga. Muat ulang halaman untuk mencoba kembali.</p>
-            <button
-              type="button"
-              className="button-secondary mt-3"
-              onClick={() => window.location.reload()}
-            >
-              Muat Ulang
-            </button>
-          </StatusBanner>
-        </SectionCard>
+        <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+          <SectionCard>
+            <StatusBanner variant="error" title="Aplikasi tidak dapat ditampilkan">
+              <p>Terjadi gangguan tak terduga. Muat ulang halaman untuk mencoba kembali.</p>
+              <button
+                type="button"
+                className="button-secondary mt-3"
+                onClick={() => window.location.reload()}
+              >
+                Muat Ulang
+              </button>
+            </StatusBanner>
+          </SectionCard>
+        </main>
       </FormShell>
     );
   }

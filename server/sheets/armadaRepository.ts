@@ -1,13 +1,13 @@
-import type { ArmadaSubmissionRecord, PilokArmadaMaster } from "../../src/types/armada";
-import type { ServerConfig } from "../config/env";
-import { columnNumberToLetter, quoteSheetName } from "./columns";
-import type { SheetsGateway } from "./gateway";
+import type { ArmadaSubmissionRecord, PilokArmadaMaster } from "../../src/types/armada.js";
+import type { ServerConfig } from "../config/env.js";
+import { columnNumberToLetter, quoteSheetName } from "./columns.js";
+import type { SheetsGateway } from "./gateway.js";
 import {
   buildSubmissionRow,
   parseMasterSheet,
   parseSubmissionSheet,
   type SubmissionSheetContext,
-} from "./parsers";
+} from "./parsers.js";
 
 export interface ArmadaPersistence {
   listMaster(): Promise<PilokArmadaMaster[]>;

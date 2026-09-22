@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import type { ServerConfig } from "../config/env";
+import type { ServerConfig } from "../config/env.js";
 
 export function createGoogleOAuthClient(config: ServerConfig) {
   const client = new google.auth.OAuth2(

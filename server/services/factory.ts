@@ -1,7 +1,7 @@
-import { getServerConfig } from "../config/env";
-import { GoogleSheetsArmadaRepository } from "../sheets/armadaRepository";
-import { createSheetsGateway } from "../sheets/gateway";
-import { ArmadaService } from "./armadaService";
+import { getServerConfig } from "../config/env.js";
+import { GoogleSheetsArmadaRepository } from "../sheets/armadaRepository.js";
+import { createSheetsGateway } from "../sheets/gateway.js";
+import { ArmadaService } from "./armadaService.js";
 
 export function createArmadaService(): ArmadaService {
   const config = getServerConfig();

@@ -1,7 +1,7 @@
 import { google } from "googleapis";
-import type { ServerConfig } from "../config/env";
-import { AppError } from "../errors";
-import { createGoogleOAuthClient } from "../google/auth";
+import type { ServerConfig } from "../config/env.js";
+import { AppError } from "../errors.js";
+import { createGoogleOAuthClient } from "../google/auth.js";
 
 export interface SheetsGateway {
   getValues(range: string): Promise<unknown[][]>;

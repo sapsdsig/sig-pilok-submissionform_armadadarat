@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { ARMADA_CAPACITIES } from "../../src/constants/armada";
-import type { ArmadaCapacity } from "../../src/types/armada";
+import { ARMADA_CAPACITIES } from "../../src/constants/armada.js";
+import type { ArmadaCapacity } from "../../src/types/armada.js";
 
 const serverQuantitySchema = z.preprocess(
   (value) => value === "" || value === undefined ? 0 : value,

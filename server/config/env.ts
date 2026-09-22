@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AppError } from "../errors";
+import { AppError } from "../errors.js";
 
 const serverConfigSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().trim().min(1),

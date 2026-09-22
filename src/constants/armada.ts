@@ -1,4 +1,4 @@
-import type { ArmadaCapacity } from "../types/armada";
+import type { ArmadaCapacity } from "../types/armada.js";
 
 export const ARMADA_CAPACITIES = [
   { key: "ton2", label: "2 Ton" },

@@ -1,18 +1,18 @@
-import { ARMADA_CAPACITIES } from "../../src/constants/armada";
+import { ARMADA_CAPACITIES } from "../../src/constants/armada.js";
 import type {
   ArmadaCounts,
   ArmadaSubmissionRecord,
   PilokArmadaMaster,
-} from "../../src/types/armada";
-import { createEmptyArmadaCounts } from "../../src/utils/armada";
-import { AppError } from "../errors";
+} from "../../src/types/armada.js";
+import { createEmptyArmadaCounts } from "../../src/utils/armada.js";
+import { AppError } from "../errors.js";
 import {
   MASTER_HEADER_SPECS,
   SUBMISSION_HEADER_SPECS,
   validateHeaders,
   type HeaderIndex,
   type SubmissionField,
-} from "./columns";
+} from "./columns.js";
 
 export interface LocatedSubmission {
   rowNumber: number;

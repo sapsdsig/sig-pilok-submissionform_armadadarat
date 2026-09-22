@@ -1,5 +1,5 @@
-import { ARMADA_CAPACITIES } from "../constants/armada";
-import type { ArmadaCounts, ArmadaFormValues } from "../types/armada";
+import { ARMADA_CAPACITIES } from "../constants/armada.js";
+import type { ArmadaCounts, ArmadaFormValues } from "../types/armada.js";
 
 export const createEmptyArmadaCounts = (): ArmadaCounts =>
   Object.fromEntries(ARMADA_CAPACITIES.map(({ key }) => [key, 0])) as ArmadaCounts;

@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { rejectMethod, sendApiError, singleQueryValue } from "../../server/http";
-import { createArmadaService } from "../../server/services/factory";
-import type { ArmadaService } from "../../server/services/armadaService";
+import { rejectMethod, sendApiError, singleQueryValue } from "../../server/http.js";
+import { createArmadaService } from "../../server/services/factory.js";
+import type { ArmadaService } from "../../server/services/armadaService.js";
 
 export function createMasterHandler(serviceFactory: () => ArmadaService = createArmadaService) {
   return async function masterHandler(request: VercelRequest, response: VercelResponse) {

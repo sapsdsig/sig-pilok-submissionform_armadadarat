@@ -1,6 +1,6 @@
-import { ARMADA_CAPACITIES } from "../../src/constants/armada";
-import type { ArmadaCapacity } from "../../src/types/armada";
-import { AppError } from "../errors";
+import { ARMADA_CAPACITIES } from "../../src/constants/armada.js";
+import type { ArmadaCapacity } from "../../src/types/armada.js";
+import { AppError } from "../errors.js";
 
 export type MasterField = "kodePilokArmada" | "distributorGroup" | "districtName";
 export type SubmissionField =

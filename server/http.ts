@@ -1,5 +1,5 @@
 import type { VercelResponse } from "@vercel/node";
-import { AppError, toPublicApiError } from "./errors";
+import { AppError, toPublicApiError } from "./errors.js";
 
 export function sendApiError(response: VercelResponse, error: unknown): void {
   const normalized = toPublicApiError(error);

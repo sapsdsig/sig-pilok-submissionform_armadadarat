@@ -1,10 +1,10 @@
 import { ZodError } from "zod";
-import type { ArmadaFormValues, ArmadaSubmissionRecord, PilokArmadaMaster } from "../../src/types/armada";
-import { calculateArmadaTotals } from "../../src/utils/armada";
-import { AppError } from "../errors";
-import type { ArmadaPersistence } from "../sheets/armadaRepository";
-import { formatWibTimestamp } from "../time/wib";
-import { routeCodeSchema, serverSubmissionSchema } from "../validation/submission";
+import type { ArmadaFormValues, ArmadaSubmissionRecord, PilokArmadaMaster } from "../../src/types/armada.js";
+import { calculateArmadaTotals } from "../../src/utils/armada.js";
+import { AppError } from "../errors.js";
+import type { ArmadaPersistence } from "../sheets/armadaRepository.js";
+import { formatWibTimestamp } from "../time/wib.js";
+import { routeCodeSchema, serverSubmissionSchema } from "../validation/submission.js";
 
 const invalidRequest = (error: ZodError) => new AppError(
   "INVALID_REQUEST",

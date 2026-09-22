@@ -24,9 +24,16 @@ export class AppError extends Error {
     status: number,
     message: string,
     publicMessage = message,
-    options?: ErrorOptions,
+    options?: { cause?: unknown },
   ) {
-    super(message, options);
+    super(message);
+    if (options && "cause" in options) {
+      Object.defineProperty(this, "cause", {
+        configurable: true,
+        value: options.cause,
+        writable: true,
+      });
+    }
     this.name = "AppError";
     this.code = code;
     this.status = status;

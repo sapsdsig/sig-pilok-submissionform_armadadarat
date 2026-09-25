@@ -99,7 +99,7 @@ export function PilokEntryGate({
           autoComplete="off"
           value={code}
           onChange={(event) => onCodeChange(event.target.value)}
-          placeholder="Contoh: 10001"
+          placeholder="Contoh: 20001"
           aria-invalid={Boolean(inputError)}
           aria-describedby={errorId}
           disabled={isLoadingMaster || Boolean(masterError)}

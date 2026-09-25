@@ -14,7 +14,7 @@ describe("AppErrorBoundary", () => {
         <BrokenChild />
       </AppErrorBoundary>,
     );
-    expect(screen.getByRole("heading", { name: "PILOK - Armada Darat" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "PILOK - Armada Truk" })).toBeInTheDocument();
     expect(screen.getByText("Aplikasi tidak dapat ditampilkan")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Muat Ulang" })).toBeInTheDocument();
     consoleError.mockRestore();

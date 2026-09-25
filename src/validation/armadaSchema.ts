@@ -22,6 +22,10 @@ export const armadaFormSchema = z.object({
     .string()
     .min(1, "Kode Pilok Armada wajib dipilih.")
     .regex(/^\d+$/, "Kode Pilok Armada tidak valid."),
+  adaPerubahan: z.string().refine(
+    (value) => value === "YA" || value === "TIDAK",
+    "Pilih apakah terdapat perubahan pada data Armada Truk.",
+  ),
   armada: z.object({
     milik: createCountsSchema(),
     sewa: createCountsSchema(),

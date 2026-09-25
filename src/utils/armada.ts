@@ -6,6 +6,7 @@ export const createEmptyArmadaCounts = (): ArmadaCounts =>
 
 export const createEmptyFormValues = (kodePilokArmada = ""): ArmadaFormValues => ({
   kodePilokArmada,
+  adaPerubahan: "",
   armada: {
     milik: createEmptyArmadaCounts(),
     sewa: createEmptyArmadaCounts(),

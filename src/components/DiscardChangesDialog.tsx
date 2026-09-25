@@ -43,7 +43,7 @@ export function DiscardChangesDialog({ isOpen, onCancel, onConfirm }: DiscardCha
         </p>
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button ref={cancelRef} type="button" className="button-secondary" onClick={onCancel}>Tetap di Form</button>
-          <button type="button" className="button-dark" onClick={onConfirm}>Ganti Kode</button>
+          <button type="button" className="button-dark" onClick={onConfirm}>Ganti Kode PILOK</button>
         </div>
       </div>
     </div>

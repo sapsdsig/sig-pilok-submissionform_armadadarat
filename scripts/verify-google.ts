@@ -7,7 +7,7 @@ import {
   validateHeaders,
 } from "../server/sheets/columns";
 import { createSheetsGateway } from "../server/sheets/gateway";
-import { parseMasterSheet, parseSubmissionSheet } from "../server/sheets/parsers";
+import { parseAdaPerubahan, parseMasterSheet, parseSubmissionSheet } from "../server/sheets/parsers";
 
 async function verifyGoogleIntegration() {
   const config = getServerConfig();
@@ -44,6 +44,16 @@ async function verifyGoogleIntegration() {
     config.submissionSheetName,
   );
   const codeColumn = submissionIndex.get("kodePilokArmada")!;
+  const statusColumn = submissionIndex.get("adaPerubahan")!;
+  let legacyBlankStatuses = 0;
+  let canonicalStatuses = 0;
+  submissionValues.slice(1).forEach((row, offset) => {
+    if (!String(row[codeColumn] ?? "").trim()) return;
+    const status = parseAdaPerubahan(row[statusColumn], offset + 2);
+    if (status) canonicalStatuses += 1;
+    else legacyBlankStatuses += 1;
+  });
+  console.log(`[PASS] ada_perubahan values (${canonicalStatuses} canonical, ${legacyBlankStatuses} blank legacy)`);
   const sampleCode = submissionValues.slice(1)
     .map((row) => String(row[codeColumn] ?? "").trim())
     .find(Boolean);

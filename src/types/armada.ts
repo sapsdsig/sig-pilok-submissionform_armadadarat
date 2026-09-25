@@ -10,8 +10,12 @@ export type ArmadaCapacity =
 
 export type ArmadaCounts = Record<ArmadaCapacity, number>;
 
+export type AdaPerubahan = "YA" | "TIDAK";
+export type AdaPerubahanValue = AdaPerubahan | "";
+
 export interface ArmadaFormValues {
   kodePilokArmada: string;
+  adaPerubahan: AdaPerubahanValue;
   armada: {
     milik: ArmadaCounts;
     sewa: ArmadaCounts;

@@ -55,6 +55,7 @@ describe("legacy submission migration", () => {
     expect(parsed.match?.data.createdAt).toBe(migrationTimestamp);
     expect(parsed.match?.data.updatedAt).toBe(migrationTimestamp);
     expect(parsed.match?.data.armada.milik.ton8).toBe(5);
+    expect(parsed.match?.data.adaPerubahan).toBe("");
   });
 
   it("tidak menimpa timestamp existing", () => {

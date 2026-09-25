@@ -2,6 +2,7 @@ import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArmadaMatrix } from "./components/ArmadaMatrix";
+import { ArmadaChangeQuestion } from "./components/ArmadaChangeQuestion";
 import { ArmadaSummary } from "./components/ArmadaSummary";
 import { ConfirmationDialog } from "./components/ConfirmationDialog";
 import { DiscardChangesDialog } from "./components/DiscardChangesDialog";
@@ -60,12 +61,14 @@ export default function App() {
   const entryInputRef = useRef<HTMLInputElement>(null);
   const recordAbortController = useRef<AbortController>();
   const masterAbortController = useRef<AbortController>();
+  const loadedArmadaValues = useRef(createEmptyFormValues().armada);
 
   const {
     control,
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isDirty },
   } = useForm<ArmadaFormValues>({
     resolver: zodResolver(armadaFormSchema),
@@ -79,6 +82,7 @@ export default function App() {
   const safeValues = useMemo(
     () => ({
       kodePilokArmada: watchedValues.kodePilokArmada ?? "",
+      adaPerubahan: watchedValues.adaPerubahan ?? "",
       armada: {
         milik: { ...createEmptyFormValues().armada.milik, ...watchedValues.armada?.milik },
         sewa: { ...createEmptyFormValues().armada.sewa, ...watchedValues.armada?.sewa },
@@ -143,18 +147,21 @@ export default function App() {
     try {
       const existing = await getExistingSubmission(kodePilokArmada, controller.signal);
       if (requestId !== loadSequence.current || controller.signal.aborted) return;
+      const loadedValues = existing ?? createEmptyFormValues(kodePilokArmada);
+      loadedArmadaValues.current = structuredClone(loadedValues.armada);
       setSelectedMaster(master);
       setMode(existing ? "edit" : "new");
-      reset(existing ?? createEmptyFormValues(kodePilokArmada));
+      reset(loadedValues);
     } catch (error) {
       if (requestId !== loadSequence.current || controller.signal.aborted) return;
       console.error("Submission request failed.", error);
       setSelectedMaster(undefined);
       setMode(undefined);
+      loadedArmadaValues.current = createEmptyFormValues().armada;
       reset(createEmptyFormValues());
       setLookupError({
-        title: "Data Armada tidak tersedia",
-        message: "Data Armada untuk Kode PILOK ini tidak dapat dimuat. Silakan coba kembali.",
+        title: "Data Armada Truk tidak tersedia",
+        message: "Data Armada Truk untuk Kode PILOK ini tidak dapat dimuat. Silakan coba kembali.",
       });
       focusEntryInput();
     } finally {
@@ -213,6 +220,7 @@ export default function App() {
     setConfirmationValues(undefined);
     setSuccess(undefined);
     setIsDiscardDialogOpen(false);
+    loadedArmadaValues.current = createEmptyFormValues().armada;
     reset(createEmptyFormValues());
     focusEntryInput();
   };
@@ -228,6 +236,21 @@ export default function App() {
   const onValidSubmit = (values: ArmadaFormValues) => {
     if (!selectedMaster || !mode) return;
     setConfirmationValues(values);
+  };
+
+  const handleAdaPerubahanChange = (value: "YA" | "TIDAK") => {
+    if (value === "TIDAK") {
+      setValue("armada", structuredClone(loadedArmadaValues.current), {
+        shouldDirty: true,
+        shouldTouch: true,
+        shouldValidate: true,
+      });
+    }
+    setValue("adaPerubahan", value, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
   };
 
   const onInvalidSubmit = () => {
@@ -251,6 +274,7 @@ export default function App() {
         distributorGroup: saved.distributorGroup,
         districtName: saved.districtName,
       };
+      loadedArmadaValues.current = structuredClone(saved.armada);
       setConfirmationValues(undefined);
       setSuccess({ master: completedMaster, mode, submission: saved });
     } catch (error) {
@@ -267,6 +291,7 @@ export default function App() {
     setSelectedMaster(success.master);
     setMode("edit");
     setEntryCode(success.master.kodePilokArmada);
+    loadedArmadaValues.current = structuredClone(success.submission.armada);
     reset(success.submission);
     setSuccess(undefined);
   };
@@ -315,16 +340,26 @@ export default function App() {
               <SectionCard>
                 <SectionHeader
                   step={2}
-                  title="Data Armada Darat"
+                  title="Data Armada Truk"
                   description="Masukkan jumlah unit berdasarkan kapasitas dan status kepemilikan."
+                  supportingText="Data yang ditampilkan pada menu ini merupakan data yang telah digunakan di Evaluasi HY 2026"
                 />
-                <ArmadaMatrix register={register} errors={errors} />
+                <ArmadaMatrix
+                  register={register}
+                  errors={errors}
+                  disabled={safeValues.adaPerubahan !== "YA"}
+                />
+                <ArmadaChangeQuestion
+                  value={safeValues.adaPerubahan}
+                  error={errors.adaPerubahan?.message}
+                  onChange={handleAdaPerubahanChange}
+                />
               </SectionCard>
 
               <SectionCard>
                 <SectionHeader
                   step={3}
-                  title="Ringkasan Armada"
+                  title="Ringkasan Armada Truk"
                   description="Total dihitung otomatis dari seluruh kapasitas dan tidak dapat diedit."
                 />
                 <ArmadaSummary {...totals} />

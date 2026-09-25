@@ -55,6 +55,7 @@ describe("nilai dan kalkulasi Armada", () => {
 describe("schema form Armada", () => {
   it("menerima nilai nol dan menormalisasi field kosong menjadi nol", () => {
     const values = createEmptyFormValues("20002");
+    values.adaPerubahan = "YA";
     const input = { ...values, armada: { ...values.armada, milik: { ...values.armada.milik, ton2: "" } } };
     const result = armadaFormSchema.safeParse(input);
     expect(result.success).toBe(true);
@@ -63,12 +64,14 @@ describe("schema form Armada", () => {
 
   it("menolak nilai negatif", () => {
     const values = createEmptyFormValues("20002");
+    values.adaPerubahan = "YA";
     values.armada.milik.ton2 = -1;
     expect(armadaFormSchema.safeParse(values).success).toBe(false);
   });
 
   it("menolak nilai desimal", () => {
     const values = createEmptyFormValues("20002");
+    values.adaPerubahan = "YA";
     values.armada.sewa.ton4 = 1.5;
     expect(armadaFormSchema.safeParse(values).success).toBe(false);
   });
@@ -79,7 +82,14 @@ describe("schema form Armada", () => {
   });
 
   it("menolak format kode yang tidak valid", () => {
-    const result = armadaFormSchema.safeParse(createEmptyFormValues("kode-tidak-valid"));
+    const values = createEmptyFormValues("kode-tidak-valid");
+    values.adaPerubahan = "YA";
+    const result = armadaFormSchema.safeParse(values);
+    expect(result.success).toBe(false);
+  });
+
+  it("mewajibkan pilihan ada_perubahan", () => {
+    const result = armadaFormSchema.safeParse(createEmptyFormValues("20002"));
     expect(result.success).toBe(false);
   });
 });

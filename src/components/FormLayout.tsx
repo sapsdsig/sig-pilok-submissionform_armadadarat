@@ -20,9 +20,9 @@ export function BrandHeader() {
         <div className="min-w-0 sm:border-l sm:border-slate-200 sm:pl-7">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-sig-dark">Form Operasional</p>
           <h1 className="mt-1 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-            PILOK - Armada Darat
+            PILOK - Armada Truk
           </h1>
-          <p className="mt-0.5 text-sm text-slate-600">Pendataan Armada Darat PILOK</p>
+          <p className="mt-0.5 text-sm text-slate-600">Pendataan Armada Truk PILOK</p>
         </div>
       </div>
     </header>
@@ -45,10 +45,11 @@ interface SectionHeaderProps {
   step: number;
   title: string;
   description?: string;
+  supportingText?: string;
   action?: ReactNode;
 }
 
-export function SectionHeader({ step, title, description, action }: SectionHeaderProps) {
+export function SectionHeader({ step, title, description, supportingText, action }: SectionHeaderProps) {
   return (
     <div className="mb-5 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex min-w-0 items-start gap-3">
@@ -58,6 +59,7 @@ export function SectionHeader({ step, title, description, action }: SectionHeade
         <div className="min-w-0">
           <h2 className="text-lg font-semibold text-slate-900 sm:text-xl">{title}</h2>
           {description ? <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p> : null}
+          {supportingText ? <p className="mt-1 text-sm leading-6 text-slate-500">{supportingText}</p> : null}
         </div>
       </div>
       {action ? <div className="shrink-0 pl-10 sm:pl-0">{action}</div> : null}

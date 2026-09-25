@@ -40,8 +40,8 @@ export function PilokIdentitySummary({ master, mode, onChangeCode }: PilokIdenti
           title={mode === "edit" ? "Edit Data" : "Submission Baru"}
         >
           {mode === "edit"
-            ? "Data yang tersimpan telah dimuat. Perubahan akan memperbarui data untuk kode ini."
-            : "Belum ada submission untuk kode ini. Semua jumlah armada dimulai dari nol."}
+            ? "Data Armada Truk yang tersimpan telah dimuat. Perubahan akan memperbarui data untuk kode ini."
+            : "Belum ada submission untuk kode ini. Semua jumlah Armada Truk dimulai dari nol."}
         </StatusBanner>
       </div>
     </SectionCard>

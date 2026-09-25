@@ -54,6 +54,7 @@ class FakePersistence implements ArmadaPersistence {
 
 const validPayload = (): ArmadaFormValues => {
   const values = createEmptyFormValues("20002");
+  values.adaPerubahan = "YA";
   values.armada.milik.ton2 = 1;
   values.armada.milik.ton6 = 2;
   values.armada.sewa.ton4 = 1;
@@ -136,6 +137,29 @@ describe("server-side submission validation and service", () => {
     expect(result.updatedAt).toBe("21-09-2026 11:45:30");
     expect(persistence.updated).toEqual(result);
   });
+
+  it("update TIDAK mempertahankan kuantitas baseline", async () => {
+    const persistence = new FakePersistence();
+    const baseline = makeRecord({
+      adaPerubahan: "YA",
+      armada: {
+        milik: { ...createEmptyFormValues().armada.milik, ton8: 6 },
+        sewa: createEmptyFormValues().armada.sewa,
+      },
+      total: 6,
+    });
+    persistence.context = contextWithRecord(baseline);
+    const payload = validPayload();
+    payload.adaPerubahan = "TIDAK";
+    payload.armada.milik.ton8 = 99;
+
+    const result = await new ArmadaService(persistence, () => "21-09-2026 11:45:30")
+      .updateSubmission("20002", payload);
+
+    expect(result.adaPerubahan).toBe("TIDAK");
+    expect(result.armada).toEqual(baseline.armada);
+    expect(result.total).toBe(6);
+  });
 });
 
 describe("WIB and Google Sheet parsing", () => {
@@ -184,6 +208,37 @@ describe("WIB and Google Sheet parsing", () => {
     expect(() => parseSubmissionSheet([headers, row, row], "submission", "20002"))
       .toThrowError(/ditemukan pada 2 row/);
   });
+
+  it.each([
+    ["", ""],
+    [" ya ", "YA"],
+    ["tidak", "TIDAK"],
+  ])("membaca ada_perubahan %j sebagai %j", (input, expected) => {
+    const context = emptyContext();
+    const record = makeRecord();
+    const row = buildSubmissionRow(context, record);
+    row[context.index.get("adaPerubahan")!] = input;
+    const parsed = parseSubmissionSheet([headers, row], "submission", "20002");
+    expect(parsed.match?.data.adaPerubahan).toBe(expected);
+  });
+
+  it("menolak ada_perubahan nonblank yang tidak valid saat read", () => {
+    const context = emptyContext();
+    const row = buildSubmissionRow(context, makeRecord());
+    row[context.index.get("adaPerubahan")!] = "MUNGKIN";
+    expect(() => parseSubmissionSheet([headers, row], "submission", "20002"))
+      .toThrowError(/ada_perubahan/);
+  });
+
+  it("mewajibkan status canonical saat write", () => {
+    const blank = validPayload();
+    blank.adaPerubahan = "";
+    expect(serverSubmissionSchema.safeParse(blank).success).toBe(false);
+    expect(serverSubmissionSchema.safeParse({ ...validPayload(), adaPerubahan: "ya" }).success)
+      .toBe(false);
+    expect(serverSubmissionSchema.safeParse({ ...validPayload(), adaPerubahan: "TIDAK" }).success)
+      .toBe(true);
+  });
 });
 
 describe("targeted update and safe errors", () => {
@@ -207,7 +262,7 @@ describe("targeted update and safe errors", () => {
     const repository = new GoogleSheetsArmadaRepository(gateway, config);
     await repository.updateSubmission(makeRecord(), contextWithRecord());
     expect(updateValues).toHaveBeenCalledWith(
-      "'submission_pilok_armada_darat'!A3:V3",
+      "'submission_pilok_armada_darat'!A3:W3",
       expect.any(Array),
     );
     expect(appendValues).not.toHaveBeenCalled();
@@ -231,7 +286,11 @@ describe("targeted update and safe errors", () => {
   it("seluruh 16 field kapasitas ditulis pada row", () => {
     const context = emptyContext();
     const values = validPayload();
-    const record = makeRecord({ armada: values.armada, total: 4 });
+    const record = makeRecord({
+      adaPerubahan: values.adaPerubahan,
+      armada: values.armada,
+      total: 4,
+    });
     const row = buildSubmissionRow(context, record);
     const capacityValues = ARMADA_CAPACITIES.flatMap(({ key }) => [
       row[context.index.get(`milik.${key}`)!],
@@ -239,5 +298,28 @@ describe("targeted update and safe errors", () => {
     ]);
     expect(capacityValues).toHaveLength(16);
     expect(capacityValues.reduce<number>((sum, value) => sum + Number(value), 0)).toBe(4);
+    expect(row[context.index.get("adaPerubahan")!]).toBe("YA");
+  });
+
+  it("menulis ada_perubahan berdasarkan header dan mempertahankan extra column", () => {
+    const reorderedHeaders = [
+      ...headers.filter((header) => header !== "ada_perubahan"),
+      "Catatan Extra",
+      "ada_perubahan",
+    ];
+    const index = validateHeaders(reorderedHeaders, SUBMISSION_HEADER_SPECS, "submission");
+    const rawRow = Array.from({ length: reorderedHeaders.length }, () => "");
+    rawRow[reorderedHeaders.indexOf("Catatan Extra")] = "KEEP ME";
+    const record = makeRecord({ adaPerubahan: "TIDAK" });
+    const context: SubmissionSheetContext = {
+      headers: reorderedHeaders,
+      index,
+      match: { rowNumber: 3, rawRow, data: record },
+    };
+
+    const row = buildSubmissionRow(context, record);
+
+    expect(row[index.get("adaPerubahan")!]).toBe("TIDAK");
+    expect(row[reorderedHeaders.indexOf("Catatan Extra")]).toBe("KEEP ME");
   });
 });

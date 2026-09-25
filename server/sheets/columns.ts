@@ -5,6 +5,7 @@ import { AppError } from "../errors.js";
 export type MasterField = "kodePilokArmada" | "distributorGroup" | "districtName";
 export type SubmissionField =
   | MasterField
+  | "adaPerubahan"
   | `milik.${ArmadaCapacity}`
   | `sewa.${ArmadaCapacity}`
   | "total"
@@ -33,6 +34,7 @@ export const SUBMISSION_HEADER_SPECS: readonly HeaderSpec<SubmissionField>[] = [
   },
   { field: "distributorGroup", header: "DISTRIBUTOR GROUP" },
   { field: "districtName", header: "DISTRICT NAME" },
+  { field: "adaPerubahan", header: "ada_perubahan", caseInsensitive: true },
   ...ARMADA_CAPACITIES.map(({ key, label }) => ({
     field: `milik.${key}` as const,
     header: `${label} Milik`,

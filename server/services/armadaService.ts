@@ -10,7 +10,7 @@ const invalidRequest = (error: ZodError) => new AppError(
   "INVALID_REQUEST",
   400,
   `Payload tidak valid: ${error.issues.map((issue) => issue.message).join(" ")}`,
-  "Data yang dikirim tidak valid. Periksa kembali jumlah Armada.",
+  "Data yang dikirim tidak valid. Periksa kembali status perubahan dan jumlah Armada Truk.",
 );
 
 export class ArmadaService {
@@ -80,7 +80,10 @@ export class ArmadaService {
         "Data Armada belum ditemukan. Muat ulang form sebelum menyimpan.",
       );
     }
-    const record = this.buildRecord(values, master, context.match.data.createdAt, this.now());
+    const effectiveValues: ArmadaFormValues = values.adaPerubahan === "TIDAK"
+      ? { ...values, armada: structuredClone(context.match.data.armada) }
+      : values;
+    const record = this.buildRecord(effectiveValues, master, context.match.data.createdAt, this.now());
     await this.persistence.updateSubmission(record, context);
     return record;
   }
@@ -106,6 +109,7 @@ export class ArmadaService {
   ): ArmadaSubmissionRecord {
     return {
       kodePilokArmada: values.kodePilokArmada,
+      adaPerubahan: values.adaPerubahan,
       distributorGroup: master.distributorGroup,
       districtName: master.districtName,
       armada: structuredClone(values.armada),

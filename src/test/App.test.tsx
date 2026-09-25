@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import App from "../App";
 import { MASTER_PILOK_URL } from "../components/PilokEntryGate";
+import type { ArmadaFormValues } from "../types/armada";
 import { defaultApiHandler } from "./setup";
 
 async function waitForGateReady() {
@@ -19,14 +20,35 @@ async function continueWithCode(code: string) {
   return user;
 }
 
-describe("PILOK Armada Darat", () => {
+async function chooseAdaPerubahan(label: "Ya" | "Tidak", user = userEvent.setup()) {
+  await user.click(screen.getByRole("radio", { name: label }));
+  return user;
+}
+
+function mockExistingStatus(status: "" | "YA" | "TIDAK") {
+  vi.mocked(fetch).mockImplementation(async (input, init) => {
+    const response = await defaultApiHandler(input, init);
+    if (String(input).endsWith("/api/submissions/20001") && (init?.method ?? "GET") === "GET") {
+      const payload = await response.json();
+      if (payload.data) payload.data.adaPerubahan = status;
+      return new Response(JSON.stringify(payload), {
+        status: response.status,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return response;
+  });
+}
+
+describe("PILOK Armada Truk", () => {
   it("initial page hanya menampilkan gate Kode PILOK", async () => {
     render(<App />);
-    expect(screen.getByRole("heading", { name: "PILOK - Armada Darat" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "PILOK - Armada Truk" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Masukkan Kode PILOK" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Data Armada Darat" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Ringkasan Armada" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Data Armada Truk" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Ringkasan Armada Truk" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Simpan Data|Simpan Perubahan/ })).not.toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent("Armada Darat");
     await waitForGateReady();
   });
 
@@ -107,7 +129,7 @@ describe("PILOK Armada Darat", () => {
     await continueWithCode("99999");
     expect(await screen.findByText("Periksa kembali kode atau lihat daftar Master PILOK.")).toBeInTheDocument();
     expect(screen.getByText("Kode PILOK tidak ditemukan.")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Data Armada Darat" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Data Armada Truk" })).not.toBeInTheDocument();
   });
 
   it("kode valid menampilkan identity read-only dan form utama", async () => {
@@ -117,8 +139,10 @@ describe("PILOK Armada Darat", () => {
     expect(screen.getByRole("heading", { name: "Informasi PILOK" })).toBeInTheDocument();
     expect(screen.getByText("ABADI PUTERA WIRAJAYA, PT")).toBeInTheDocument();
     expect(screen.getByText("MADIUN")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Data Armada Darat" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Ringkasan Armada" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Data Armada Truk" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Ringkasan Armada Truk" })).toBeInTheDocument();
+    expect(screen.getByText("Data yang ditampilkan pada menu ini merupakan data yang telah digunakan di Evaluasi HY 2026")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ganti Kode PILOK" })).toBeInTheDocument();
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
   });
 
@@ -142,10 +166,73 @@ describe("PILOK Armada Darat", () => {
     expect(screen.getByLabelText("Total Armada", { selector: "output" })).toHaveTextContent("9");
   });
 
+  it("legacy blank tidak memilih status, membuat matrix read-only, dan memblokir save", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await continueWithCode("20001");
+    await screen.findByText("Edit Data");
+
+    expect(screen.getByRole("radio", { name: "Tidak" })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "Ya" })).not.toBeChecked();
+    expect(screen.getByLabelText("Milik 8 Ton")).toHaveAttribute("readonly");
+
+    await user.click(screen.getByRole("button", { name: "Simpan Perubahan" }));
+    expect(await screen.findByText("Pilih apakah terdapat perubahan pada data Armada Truk.")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Konfirmasi Penyimpanan" })).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("radio", { name: "Tidak" })).toHaveFocus());
+
+    await chooseAdaPerubahan("Ya", user);
+    expect(screen.getByLabelText("Milik 8 Ton")).not.toHaveAttribute("readonly");
+    await chooseAdaPerubahan("Tidak", user);
+    expect(screen.getByLabelText("Milik 8 Ton")).toHaveAttribute("readonly");
+  });
+
+  it("existing TIDAK terpilih dan read-only, lalu beralih ke YA tanpa mereset baseline", async () => {
+    mockExistingStatus("TIDAK");
+    const user = userEvent.setup();
+    render(<App />);
+    await continueWithCode("20001");
+
+    expect(await screen.findByRole("radio", { name: "Tidak" })).toBeChecked();
+    const input = screen.getByLabelText("Milik 8 Ton");
+    expect(input).toHaveAttribute("readonly");
+    expect(input).toHaveValue(6);
+    await chooseAdaPerubahan("Ya", user);
+    expect(input).not.toHaveAttribute("readonly");
+    expect(input).toHaveValue(6);
+  });
+
+  it("existing YA terpilih, editable, dan YA ke TIDAK merestore baseline", async () => {
+    mockExistingStatus("YA");
+    const user = userEvent.setup();
+    render(<App />);
+    await continueWithCode("20001");
+
+    expect(await screen.findByRole("radio", { name: "Ya" })).toBeChecked();
+    const input = screen.getByLabelText("Milik 8 Ton");
+    expect(input).not.toHaveAttribute("readonly");
+    await user.clear(input);
+    await user.type(input, "12");
+    expect(input).toHaveValue(12);
+    await chooseAdaPerubahan("Tidak", user);
+    expect(input).toHaveValue(6);
+    expect(input).toHaveAttribute("readonly");
+  });
+
+  it("perubahan status saja dianggap dirty saat Ganti Kode PILOK", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await continueWithCode("20001");
+    await chooseAdaPerubahan("Tidak", user);
+    await user.click(screen.getByRole("button", { name: "Ganti Kode PILOK" }));
+    expect(screen.getByRole("dialog", { name: "Ganti Kode PILOK?" })).toBeInTheDocument();
+  });
+
   it("total berubah reaktif dan ditampilkan sebagai output non-editable", async () => {
     const user = userEvent.setup();
     render(<App />);
     await continueWithCode("20002");
+    await chooseAdaPerubahan("Ya", user);
     const owned = screen.getByLabelText("Milik 2 Ton");
     const rented = screen.getByLabelText("Sewa 4 Ton");
     await user.clear(owned);
@@ -168,13 +255,14 @@ describe("PILOK Armada Darat", () => {
     expect(screen.getByRole("heading", { name: "Masukkan Kode PILOK" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: /Kode PILOK/i })).toHaveValue("");
     expect(screen.queryByText("MAGETAN")).not.toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Data Armada Darat" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Data Armada Truk" })).not.toBeInTheDocument();
   });
 
   it("Ganti Kode PILOK meminta konfirmasi bila form sudah berubah", async () => {
     const user = userEvent.setup();
     render(<App />);
     await continueWithCode("20002");
+    await chooseAdaPerubahan("Ya", user);
     const input = screen.getByLabelText("Milik 2 Ton");
     await user.clear(input);
     await user.type(input, "7");
@@ -189,11 +277,12 @@ describe("PILOK Armada Darat", () => {
     const user = userEvent.setup();
     render(<App />);
     await continueWithCode("20002");
+    await chooseAdaPerubahan("Ya", user);
     const input = screen.getByLabelText("Milik 2 Ton");
     await user.clear(input);
     await user.type(input, "7");
     await user.click(screen.getByRole("button", { name: "Ganti Kode PILOK" }));
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Ganti Kode" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Ganti Kode PILOK" }));
     expect(screen.getByRole("heading", { name: "Masukkan Kode PILOK" })).toBeInTheDocument();
   });
 
@@ -201,6 +290,7 @@ describe("PILOK Armada Darat", () => {
     const user = userEvent.setup();
     render(<App />);
     await continueWithCode("20002");
+    await chooseAdaPerubahan("Ya", user);
     const input = screen.getByLabelText("Milik 2 Ton");
     await user.clear(input);
     await user.type(input, "7");
@@ -216,25 +306,86 @@ describe("PILOK Armada Darat", () => {
     const user = userEvent.setup();
     render(<App />);
     await continueWithCode("20002");
+    await chooseAdaPerubahan("Tidak", user);
     await user.click(screen.getByRole("button", { name: "Simpan Data" }));
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByRole("button", { name: "Simpan" }));
-    expect(await screen.findByText("Data Armada berhasil disimpan.")).toBeInTheDocument();
+    expect(await screen.findByText("Data Armada Truk berhasil disimpan.")).toBeInTheDocument();
   });
 
   it("konfirmasi edit menampilkan success state perubahan", async () => {
     const user = userEvent.setup();
     render(<App />);
     await continueWithCode("20001");
+    await chooseAdaPerubahan("Tidak", user);
     await user.click(await screen.findByRole("button", { name: "Simpan Perubahan" }));
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByRole("button", { name: "Simpan" }));
-    expect(await screen.findByText("Perubahan data Armada berhasil disimpan.")).toBeInTheDocument();
+    expect(await screen.findByText("Perubahan data Armada Truk berhasil disimpan.")).toBeInTheDocument();
+  });
+
+  it("save TIDAK mengirim canonical status dan successful save membersihkan dirty state", async () => {
+    let submitted: ArmadaFormValues | undefined;
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      if ((init?.method ?? "GET") === "PUT") {
+        submitted = JSON.parse(String(init?.body)) as ArmadaFormValues;
+      }
+      return defaultApiHandler(input, init);
+    });
+    const user = userEvent.setup();
+    render(<App />);
+    await continueWithCode("20001");
+    await chooseAdaPerubahan("Tidak", user);
+    await user.click(screen.getByRole("button", { name: "Simpan Perubahan" }));
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Simpan" }));
+    await screen.findByText("Perubahan data Armada Truk berhasil disimpan.");
+
+    expect(submitted?.adaPerubahan).toBe("TIDAK");
+    expect(submitted?.armada.milik.ton8).toBe(6);
+    await user.click(screen.getByRole("button", { name: "Kembali ke Form" }));
+    expect(screen.getByRole("radio", { name: "Tidak" })).toBeChecked();
+    expect(screen.getByLabelText("Milik 8 Ton")).toHaveAttribute("readonly");
+    await user.click(screen.getByRole("button", { name: "Ganti Kode PILOK" }));
+    expect(screen.queryByRole("dialog", { name: "Ganti Kode PILOK?" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Masukkan Kode PILOK" })).toBeInTheDocument();
+  });
+
+  it("save YA mengirim canonical status dan saved quantity menjadi baseline terbaru", async () => {
+    let submitted: ArmadaFormValues | undefined;
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      if ((init?.method ?? "GET") === "PUT") {
+        submitted = JSON.parse(String(init?.body)) as ArmadaFormValues;
+      }
+      return defaultApiHandler(input, init);
+    });
+    const user = userEvent.setup();
+    render(<App />);
+    await continueWithCode("20001");
+    await chooseAdaPerubahan("Ya", user);
+    const input = screen.getByLabelText("Milik 8 Ton");
+    await user.clear(input);
+    await user.type(input, "7");
+    await user.click(screen.getByRole("button", { name: "Simpan Perubahan" }));
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Simpan" }));
+    await screen.findByText("Perubahan data Armada Truk berhasil disimpan.");
+
+    expect(submitted?.adaPerubahan).toBe("YA");
+    expect(submitted?.armada.milik.ton8).toBe(7);
+    await user.click(screen.getByRole("button", { name: "Kembali ke Form" }));
+    const savedInput = screen.getByLabelText("Milik 8 Ton");
+    expect(screen.getByRole("radio", { name: "Ya" })).toBeChecked();
+    expect(savedInput).not.toHaveAttribute("readonly");
+    expect(savedInput).toHaveValue(7);
+    await user.clear(savedInput);
+    await user.type(savedInput, "15");
+    await chooseAdaPerubahan("Tidak", user);
+    expect(savedInput).toHaveValue(7);
   });
 
   it("menolak negatif dan desimal dengan pesan aksesibel", async () => {
     render(<App />);
     await continueWithCode("20002");
+    await chooseAdaPerubahan("Ya");
     const negative = screen.getByLabelText("Milik 2 Ton");
     fireEvent.change(negative, { target: { value: "-1" } });
     expect(await screen.findByText("Jumlah armada tidak boleh negatif.")).toBeInTheDocument();
@@ -267,6 +418,7 @@ describe("PILOK Armada Darat", () => {
       exists: true,
       data: {
         kodePilokArmada: "20002",
+        adaPerubahan: "",
         distributorGroup: "OLD",
         districtName: "OLD",
         armada: {
@@ -288,6 +440,7 @@ describe("PILOK Armada Darat", () => {
     const user = userEvent.setup();
     render(<App />);
     await continueWithCode("20002");
+    await chooseAdaPerubahan("Ya", user);
     const input = screen.getByLabelText("Milik 2 Ton");
     await user.clear(input);
     await user.type(input, "7");

@@ -1,6 +1,6 @@
-# PILOK - Armada Darat
+# PILOK - Armada Truk
 
-Aplikasi web untuk membaca, membuat, dan memperbarui data Armada Darat PILOK. UI React berkomunikasi dengan API serverless pada origin yang sama; hanya server yang mengakses Google Sheets dan kredensial OAuth.
+Aplikasi web untuk membaca, membuat, dan memperbarui data Armada Truk PILOK. UI React berkomunikasi dengan API serverless pada origin yang sama; hanya server yang mengakses Google Sheets dan kredensial OAuth.
 
 ## Tech stack
 
@@ -28,7 +28,7 @@ Business logic server memvalidasi payload, mengambil Distributor Group dan Distr
 Salin `.env.example` menjadi `.env` dan isi seluruh konfigurasi berikut:
 
 ```env
-VITE_APP_NAME="PILOK - Armada Darat"
+VITE_APP_NAME="PILOK - Armada Truk"
 
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
@@ -108,6 +108,7 @@ Sheet submission default `submission_pilok_armada_darat` membutuhkan:
 kode_pilok_armada
 DISTRIBUTOR GROUP
 DISTRICT NAME
+ada_perubahan
 2/4/6/8/10/16/24/32 Ton Milik
 2/4/6/8/10/16/24/32 Ton Sewa
 Total
@@ -115,7 +116,7 @@ created_at
 updated_at
 ```
 
-Integrasi membaca header terlebih dahulu, mendeteksi kolom wajib yang hilang atau terduplikasi, dan mempertahankan kolom tambahan ketika memperbarui row. Blank numeric cells dibaca sebagai nol; nilai negatif, desimal, non-finite, atau non-numeric dianggap kerusakan data.
+Integrasi membaca header terlebih dahulu, mendeteksi kolom wajib yang hilang atau terduplikasi, dan mempertahankan kolom tambahan ketika memperbarui row. Blank numeric cells dibaca sebagai nol; nilai negatif, desimal, non-finite, atau non-numeric dianggap kerusakan data. Nilai legacy `ada_perubahan` boleh kosong saat dibaca, sedangkan submission baru hanya menerima nilai canonical `YA` atau `TIDAK`.
 
 Untuk kompatibilitas data legacy, header `Kode Pilok Armada` diterima sebagai alias tunggal bagi `kode_pilok_armada`. Jika kedua bentuk hadir sekaligus, validasi gagal sebagai header ambigu/duplikat.
 

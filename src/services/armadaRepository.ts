@@ -35,6 +35,7 @@ const countsSchema = z.object({
 
 const submissionRecordSchema = z.object({
   kodePilokArmada: z.string().min(1),
+  adaPerubahan: z.union([z.literal(""), z.enum(["YA", "TIDAK"])]),
   distributorGroup: z.string().min(1),
   districtName: z.string().min(1),
   armada: z.object({ milik: countsSchema, sewa: countsSchema }),

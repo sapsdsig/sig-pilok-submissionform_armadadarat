@@ -1,5 +1,6 @@
 import { ARMADA_CAPACITIES } from "../../src/constants/armada.js";
 import type {
+  AdaPerubahanValue,
   ArmadaCounts,
   ArmadaSubmissionRecord,
   PilokArmadaMaster,
@@ -53,6 +54,18 @@ export function parseSheetQuantity(value: unknown, label = "jumlah Armada"): num
     );
   }
   return normalized;
+}
+
+export function parseAdaPerubahan(value: unknown, rowNumber?: number): AdaPerubahanValue {
+  const normalized = String(value ?? "").trim().toLocaleUpperCase("id-ID");
+  if (!normalized) return "";
+  if (normalized === "YA" || normalized === "TIDAK") return normalized;
+  throw new AppError(
+    "SHEET_DATA_ERROR",
+    503,
+    `Nilai ada_perubahan${rowNumber ? ` pada row ${rowNumber}` : ""} tidak valid.`,
+    "Status perubahan pada spreadsheet tidak valid. Hubungi administrator.",
+  );
 }
 
 export function parseMasterSheet(values: readonly unknown[][], sheetName: string): PilokArmadaMaster[] {
@@ -141,6 +154,7 @@ export function parseSubmissionSheet(
         kodePilokArmada,
         distributorGroup: requiredCell(row, index.get("distributorGroup")!, "DISTRIBUTOR GROUP", rowNumber),
         districtName: requiredCell(row, index.get("districtName")!, "DISTRICT NAME", rowNumber),
+        adaPerubahan: parseAdaPerubahan(row[index.get("adaPerubahan")!], rowNumber),
         armada,
         total,
         createdAt: requiredCell(row, index.get("createdAt")!, "created_at", rowNumber),
@@ -165,6 +179,7 @@ export function buildSubmissionRow(
   set("kodePilokArmada", record.kodePilokArmada);
   set("distributorGroup", record.distributorGroup);
   set("districtName", record.districtName);
+  set("adaPerubahan", record.adaPerubahan);
   ARMADA_CAPACITIES.forEach(({ key }) => {
     set(`milik.${key}`, record.armada.milik[key]);
     set(`sewa.${key}`, record.armada.sewa[key]);

@@ -25,6 +25,10 @@ export const routeCodeSchema = z
 
 export const serverSubmissionSchema = z.object({
   kodePilokArmada: routeCodeSchema,
+  adaPerubahan: z.enum(["YA", "TIDAK"], {
+    invalid_type_error: "Status perubahan harus YA atau TIDAK.",
+    required_error: "Status perubahan wajib dipilih.",
+  }),
   armada: z.object({
     milik: createServerCountsSchema(),
     sewa: createServerCountsSchema(),

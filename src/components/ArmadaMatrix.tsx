@@ -11,7 +11,10 @@ interface ArmadaMatrixProps {
 
 export function ArmadaMatrix({ register, errors, disabled = false }: ArmadaMatrixProps) {
   return (
-    <div className="min-w-0 overflow-hidden rounded-lg border border-slate-200">
+    <div
+      className={`min-w-0 overflow-hidden rounded-lg border border-slate-200 ${disabled ? "bg-slate-50" : "bg-white"}`}
+      aria-readonly={disabled}
+    >
       <div className="hidden grid-cols-[minmax(0,1fr)_minmax(130px,0.7fr)_minmax(130px,0.7fr)] bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 sm:grid">
         <span>Kapasitas</span>
         <span>Milik</span>
@@ -39,10 +42,12 @@ export function ArmadaMatrix({ register, errors, disabled = false }: ArmadaMatri
                       min="0"
                       step="1"
                       inputMode="numeric"
-                      disabled={disabled}
+                      readOnly={disabled}
+                      tabIndex={disabled ? -1 : undefined}
+                      aria-readonly={disabled}
                       aria-invalid={Boolean(error)}
                       aria-describedby={error ? `${inputId}-error` : undefined}
-                      className={`form-input pr-12 text-right tabular-nums ${error ? "input-error" : ""}`}
+                      className={`form-input pr-12 text-right tabular-nums read-only:pointer-events-none read-only:bg-slate-100 read-only:text-slate-700 ${error ? "input-error" : ""}`}
                       {...register(`armada.${category}.${key}`, {
                         setValueAs: (value: string) => value === "" ? 0 : Number(value),
                       })}

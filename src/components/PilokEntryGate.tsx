@@ -40,7 +40,7 @@ export function PilokEntryGate({
       <SectionHeader
         step={1}
         title="Masukkan Kode PILOK"
-        description="Kode digunakan untuk memuat distributor, district, dan data armada sebelumnya."
+        description="Kode digunakan untuk memuat data armada distributor per distrik"
       />
 
       <div className="mb-6 flex flex-col gap-4 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">

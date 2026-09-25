@@ -342,11 +342,12 @@ export default function App() {
                   step={2}
                   title="Data Armada Truk"
                   description="Masukkan jumlah unit berdasarkan kapasitas dan status kepemilikan."
-                  supportingText="Data yang ditampilkan pada menu ini merupakan data yang telah digunakan di Evaluasi HY 2026"
+                  supportingText="Data yang ditampilkan pada menu ini merupakan data pada database MDXL dan telah digunakan di Evaluasi HY 2026"
                 />
                 <ArmadaMatrix
                   register={register}
                   errors={errors}
+                  values={safeValues.armada}
                   disabled={safeValues.adaPerubahan !== "YA"}
                 />
                 <ArmadaChangeQuestion

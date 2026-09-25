@@ -6,10 +6,11 @@ import { FieldError } from "./FormLayout";
 interface ArmadaMatrixProps {
   register: UseFormRegister<ArmadaFormValues>;
   errors: FieldErrors<ArmadaFormValues>;
+  values: ArmadaFormValues["armada"];
   disabled?: boolean;
 }
 
-export function ArmadaMatrix({ register, errors, disabled = false }: ArmadaMatrixProps) {
+export function ArmadaMatrix({ register, errors, values, disabled = false }: ArmadaMatrixProps) {
   return (
     <div
       className={`min-w-0 overflow-hidden rounded-lg border border-slate-200 ${disabled ? "bg-slate-50" : "bg-white"}`}
@@ -30,6 +31,13 @@ export function ArmadaMatrix({ register, errors, disabled = false }: ArmadaMatri
             {(["milik", "sewa"] as const).map((category) => {
               const inputId = `armada-${category}-${key}`;
               const error = errors.armada?.[category]?.[key]?.message;
+              const value = values[category][key];
+              const isNonZero = typeof value === "number" && Number.isFinite(value) && value !== 0;
+              const valueStyle = error
+                ? "input-error"
+                : isNonZero
+                  ? "border-blue-300 bg-blue-50 text-blue-950 read-only:bg-blue-50 read-only:text-blue-950"
+                  : "read-only:bg-slate-100 read-only:text-slate-700";
               return (
                 <div key={category} className="min-w-0">
                   <label htmlFor={inputId} className="mb-1.5 block text-xs font-medium text-slate-600 sm:sr-only">
@@ -47,7 +55,8 @@ export function ArmadaMatrix({ register, errors, disabled = false }: ArmadaMatri
                       aria-readonly={disabled}
                       aria-invalid={Boolean(error)}
                       aria-describedby={error ? `${inputId}-error` : undefined}
-                      className={`form-input pr-12 text-right tabular-nums read-only:pointer-events-none read-only:bg-slate-100 read-only:text-slate-700 ${error ? "input-error" : ""}`}
+                      data-highlighted={isNonZero ? "true" : "false"}
+                      className={`form-input pr-12 text-right tabular-nums read-only:pointer-events-none ${valueStyle}`}
                       {...register(`armada.${category}.${key}`, {
                         setValueAs: (value: string) => value === "" ? 0 : Number(value),
                       })}

@@ -48,6 +48,8 @@ describe("PILOK Armada Truk", () => {
     expect(screen.queryByRole("heading", { name: "Data Armada Truk" })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Ringkasan Armada Truk" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Simpan Data|Simpan Perubahan/ })).not.toBeInTheDocument();
+    expect(screen.queryByText("Kode digunakan untuk memuat distributor, district, dan data armada sebelumnya.")).not.toBeInTheDocument();
+    expect(screen.getByText("Kode digunakan untuk memuat data armada distributor per distrik")).toBeInTheDocument();
     expect(document.body).not.toHaveTextContent("Armada Darat");
     await waitForGateReady();
   });
@@ -141,7 +143,10 @@ describe("PILOK Armada Truk", () => {
     expect(screen.getByText("MADIUN")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Data Armada Truk" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Ringkasan Armada Truk" })).toBeInTheDocument();
-    expect(screen.getByText("Data yang ditampilkan pada menu ini merupakan data yang telah digunakan di Evaluasi HY 2026")).toBeInTheDocument();
+    const context = screen.getByText("Data yang ditampilkan pada menu ini merupakan data pada database MDXL dan telah digunakan di Evaluasi HY 2026");
+    const instruction = screen.getByText("Masukkan jumlah unit berdasarkan kapasitas dan status kepemilikan.");
+    expect(context).toHaveClass("text-base", "font-semibold", "text-slate-700");
+    expect(context.compareDocumentPosition(instruction) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole("button", { name: "Ganti Kode PILOK" })).toBeInTheDocument();
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
   });
@@ -164,6 +169,53 @@ describe("PILOK Armada Truk", () => {
     expect(screen.getByLabelText("Total Armada Milik")).toHaveTextContent("9");
     expect(screen.getByLabelText("Total Armada Sewa")).toHaveTextContent("0");
     expect(screen.getByLabelText("Total Armada", { selector: "output" })).toHaveTextContent("9");
+  });
+
+  it("nilai nol tetap normal dan nilai non-zero disorot biru pada matrix read-only", async () => {
+    render(<App />);
+    await continueWithCode("20001");
+    await screen.findByText("Edit Data");
+
+    const zeroInput = screen.getByLabelText("Milik 2 Ton");
+    const nonZeroInput = screen.getByLabelText("Milik 8 Ton");
+    expect(zeroInput).toHaveAttribute("readonly");
+    expect(zeroInput).toHaveAttribute("data-highlighted", "false");
+    expect(zeroInput).not.toHaveClass("bg-blue-50", "border-blue-300");
+    expect(nonZeroInput).toHaveAttribute("readonly");
+    expect(nonZeroInput).toHaveAttribute("data-highlighted", "true");
+    expect(nonZeroInput).toHaveClass("bg-blue-50", "border-blue-300", "text-blue-950");
+  });
+
+  it("highlight non-zero tetap berlaku saat editable", async () => {
+    mockExistingStatus("YA");
+    render(<App />);
+    await continueWithCode("20001");
+
+    const input = await screen.findByLabelText("Milik 8 Ton");
+    expect(input).not.toHaveAttribute("readonly");
+    expect(input).toHaveAttribute("data-highlighted", "true");
+    expect(input).toHaveClass("bg-blue-50", "border-blue-300", "text-blue-950");
+  });
+
+  it("highlight editable mengikuti perubahan nilai 0 ke non-zero dan kembali ke 0", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await continueWithCode("20002");
+    await chooseAdaPerubahan("Ya", user);
+    const input = screen.getByLabelText("Milik 2 Ton");
+
+    expect(input).toHaveValue(0);
+    expect(input).toHaveAttribute("data-highlighted", "false");
+    await user.clear(input);
+    await user.type(input, "4");
+    expect(input).toHaveValue(4);
+    expect(input).toHaveAttribute("data-highlighted", "true");
+    expect(input).toHaveClass("bg-blue-50", "border-blue-300", "text-blue-950");
+    await user.clear(input);
+    await user.type(input, "0");
+    expect(input).toHaveValue(0);
+    expect(input).toHaveAttribute("data-highlighted", "false");
+    expect(input).not.toHaveClass("bg-blue-50", "border-blue-300");
   });
 
   it("legacy blank tidak memilih status, membuat matrix read-only, dan memblokir save", async () => {

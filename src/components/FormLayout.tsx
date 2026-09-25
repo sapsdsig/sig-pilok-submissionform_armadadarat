@@ -58,8 +58,14 @@ export function SectionHeader({ step, title, description, supportingText, action
         </span>
         <div className="min-w-0">
           <h2 className="text-lg font-semibold text-slate-900 sm:text-xl">{title}</h2>
-          {description ? <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p> : null}
-          {supportingText ? <p className="mt-1 text-sm leading-6 text-slate-500">{supportingText}</p> : null}
+          {supportingText ? (
+            <p className="mt-2 text-base font-semibold leading-6 text-slate-700">{supportingText}</p>
+          ) : null}
+          {description ? (
+            <p className={`${supportingText ? "mt-2" : "mt-1"} text-sm leading-6 text-slate-600`}>
+              {description}
+            </p>
+          ) : null}
         </div>
       </div>
       {action ? <div className="shrink-0 pl-10 sm:pl-0">{action}</div> : null}
